@@ -44,6 +44,8 @@ type WorkspaceKindEnvelope Envelope[models.WorkspaceKind]
 
 type ListValuesEnvelope Envelope[models.ListValuesResponse]
 
+type ListValuesRequestEnvelope Envelope[*models.ListValuesRequestData]
+
 // GetWorkspaceKindHandler retrieves a specific workspace kind by name.
 //
 //	@Summary		Get workspace kind
@@ -249,7 +251,7 @@ func (a *App) CreateWorkspaceKindHandler(w http.ResponseWriter, r *http.Request,
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	path		string						true	"Name of the workspace kind"	extensions(x-example=jupyterlab)
-//	@Param			body	body		models.ListValuesRequest	true	"Request body with optional context filters"
+//	@Param			body	body		ListValuesRequestEnvelope	true	"Request body with optional context filters"
 //	@Success		200		{object}	ListValuesEnvelope			"Successful operation. Returns filtered options with rule_effects."
 //	@Failure		400		{object}	ErrorEnvelope				"Bad Request. Invalid workspace kind name or request body."
 //	@Failure		401		{object}	ErrorEnvelope				"Unauthorized. Authentication is required."
@@ -269,9 +271,26 @@ func (a *App) ListValuesHandler(w http.ResponseWriter, r *http.Request, ps httpr
 	}
 
 	// parse request body
-	var requestBody models.ListValuesRequest
-	if err := a.DecodeJSON(r, &requestBody); err != nil {
-		a.badRequestResponse(w, r, err)
+	bodyEnvelope := &ListValuesRequestEnvelope{}
+	if err := a.DecodeJSON(r, bodyEnvelope); err != nil {
+		if a.IsMaxBytesError(err) {
+			a.requestEntityTooLargeResponse(w, r, err)
+			return
+		}
+		a.badRequestResponse(w, r, fmt.Errorf("error decoding request body: %w", err))
+		return
+	}
+
+	// validate the request body
+	dataPath := field.NewPath("data")
+	if bodyEnvelope.Data == nil {
+		valErrs = append(valErrs, field.Required(dataPath, "data is required"))
+		a.failedValidationResponse(w, r, errMsgRequestBodyInvalid, valErrs, nil)
+		return
+	}
+	valErrs = append(valErrs, bodyEnvelope.Data.Validate(dataPath)...)
+	if len(valErrs) > 0 {
+		a.failedValidationResponse(w, r, errMsgRequestBodyInvalid, valErrs, nil)
 		return
 	}
 
@@ -301,7 +320,7 @@ func (a *App) ListValuesHandler(w http.ResponseWriter, r *http.Request, ps httpr
 	}
 
 	// build the response with rule_effects and context filtering
-	response := models.BuildListValuesResponse(workspaceKind, requestBody.Data.Context)
+	response := models.BuildListValuesResponse(workspaceKind, bodyEnvelope.Data.Context)
 
 	responseEnvelope := &ListValuesEnvelope{Data: response}
 	a.dataResponse(w, r, responseEnvelope)

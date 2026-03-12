@@ -16,6 +16,12 @@ limitations under the License.
 
 package workspacekinds
 
+import (
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/kubeflow/notebooks/workspaces/backend/internal/helper"
+)
+
 type WorkspaceKind struct {
 	Name               string         `json:"name"`
 	DisplayName        string         `json:"displayName"`
@@ -118,10 +124,34 @@ type ListValuesRequestData struct {
 	Context *ListValuesContext `json:"context,omitempty"`
 }
 
+// Validate validates the listvalues request data by delegating to Context when present.
+func (d *ListValuesRequestData) Validate(prefix *field.Path) field.ErrorList {
+	var errs field.ErrorList
+	if d == nil {
+		return errs
+	}
+	if d.Context != nil {
+		errs = append(errs, d.Context.Validate(prefix.Child("context"))...)
+	}
+	return errs
+}
+
 type ListValuesContext struct {
 	Namespace   *ContextNamespace   `json:"namespace,omitempty"`
 	PodConfig   *ContextPodConfig   `json:"podConfig,omitempty"`
 	ImageConfig *ContextImageConfig `json:"imageConfig,omitempty"`
+}
+
+// Validate validates the context (e.g. context.namespace.name when set).
+func (c *ListValuesContext) Validate(prefix *field.Path) field.ErrorList {
+	var errs field.ErrorList
+	if c == nil {
+		return errs
+	}
+	if c.Namespace != nil {
+		errs = append(errs, helper.ValidateKubernetesNamespaceName(prefix.Child("namespace", "name"), c.Namespace.Name)...)
+	}
+	return errs
 }
 
 type ContextNamespace struct {

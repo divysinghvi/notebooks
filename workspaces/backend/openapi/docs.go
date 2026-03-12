@@ -665,7 +665,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/workspacekinds.ListValuesRequest"
+                            "$ref": "#/definitions/api.ListValuesRequestEnvelope"
                         }
                     }
                 ],
@@ -1348,6 +1348,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api.ListValuesRequestEnvelope": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/workspacekinds.ListValuesRequestData"
+                }
+            }
+        },
         "api.NamespaceListEnvelope": {
             "type": "object",
             "required": [
@@ -1880,17 +1891,6 @@ const docTemplate = `{
                 },
                 "podConfig": {
                     "$ref": "#/definitions/workspacekinds.ContextPodConfig"
-                }
-            }
-        },
-        "workspacekinds.ListValuesRequest": {
-            "type": "object",
-            "required": [
-                "data"
-            ],
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/workspacekinds.ListValuesRequestData"
                 }
             }
         },

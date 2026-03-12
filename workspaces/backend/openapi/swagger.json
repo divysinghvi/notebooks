@@ -663,7 +663,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/workspacekinds.ListValuesRequest"
+                            "$ref": "#/definitions/api.ListValuesRequestEnvelope"
                         }
                     }
                 ],
@@ -1346,6 +1346,17 @@
                 }
             }
         },
+        "api.ListValuesRequestEnvelope": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/workspacekinds.ListValuesRequestData"
+                }
+            }
+        },
         "api.NamespaceListEnvelope": {
             "type": "object",
             "required": [
@@ -1878,17 +1889,6 @@
                 },
                 "podConfig": {
                     "$ref": "#/definitions/workspacekinds.ContextPodConfig"
-                }
-            }
-        },
-        "workspacekinds.ListValuesRequest": {
-            "type": "object",
-            "required": [
-                "data"
-            ],
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/workspacekinds.ListValuesRequestData"
                 }
             }
         },
